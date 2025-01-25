@@ -48,14 +48,14 @@ def main():
             continue
 
         print(f"You said: {user_input}")
-        if user_input.lower() == "exit." or user_input.lower() == "done":
+        if user_input.lower().startswith("exit") or user_input.lower() == "done":
             print("User wants to end the conversation")
             break
 
         if len(user_input.split(" ")) < 2:  # Correct placement of parentheses
             print("One word detected. Skipping")
             continue
-        if user_input == "Thank you.":
+        if user_input.startswith("Thank you."):
             continue
 
         update_short_term_memory("user", user_input)
