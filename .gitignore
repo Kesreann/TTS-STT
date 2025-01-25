@@ -8,3 +8,6 @@ Brain/
 conversation_memory.log
 *.zip
 models/
+response.wav
+screenshot.png
+temp_recording.wav
