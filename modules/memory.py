@@ -57,17 +57,18 @@ def update_long_term_memory():
             save_memory(LONG_TERM_MEMORY, summary, as_list=False)
             save_memory(SHORT_TERM_MEMORY, "", as_list=False)  # Clear short-term memory
 
-        logging.info("Sending convo to ollama for key information extraction")
-        response_key_memory = ollama.chat(model=MODEL_SUMMARY, messages=[
-            {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
-            {"role": "user", "content": full_conversation}
-        ])
-
-        if response_key_memory:
-            save_memory(KEY_MEMORY, merge_conversations(response_key_memory['message']['content'], key_memories), as_list=False)
-
-        print(response_key_memory['message']['content'])
-        logging.debug("key memory response: " + response_key_memory['message']['content'])
+        #
+        # logging.info("Sending convo to ollama for key information extraction")
+        # response_key_memory = ollama.chat(model=MODEL_SUMMARY, messages=[
+        #     {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
+        #     {"role": "user", "content": full_conversation}
+        # ])
+        #
+        # if response_key_memory:
+        #     save_memory(KEY_MEMORY, merge_conversations(response_key_memory['message']['content'], key_memories), as_list=False)
+        #
+        # print(response_key_memory['message']['content'])
+        # logging.debug("key memory response: " + response_key_memory['message']['content'])
 
 
 def load_memory_on_start():
