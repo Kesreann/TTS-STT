@@ -2,11 +2,13 @@ import atexit
 from modules.ollama_server import start_ollama_server
 from modules.audio_recorder import record_audio
 from modules.stt import transcribe_audio
-from modules.tts import speak_text
+from modules.tts import speak_text, setup_tts
 from modules.ollama_client import generate_response
 from modules.memory import update_short_term_memory, memory_on_exit
 import torch
 import logging
+
+from utils.string_utils import remove_emojis
 
 # Set up the logger
 logging.basicConfig(
@@ -31,6 +33,10 @@ def main():
     # load_long_term_into_session()
 
     while True:
+        # ######################################
+        #   USER
+        # ######################################
+
         audio_path = record_audio()
         if not audio_path:
             print("No audio captured, retrying...")
@@ -54,14 +60,25 @@ def main():
 
         update_short_term_memory("user", user_input)
 
-        response = generate_response(user_input)
-        print(f"LLM: {response}")
-        # for chunk in response:
-        #     print(f"LLM: {chunk['message']['content']}", end='', flush=True)
-        speak_text(response)
+        # ######################################
+        #   LLM
+        # ######################################
 
+        response = generate_response(user_input)
+        full_message = ""
+        for chunk in response:
+            # Extract the content from the chunk and feed it to TTS
+            message_content = chunk['message']['content']
+            message_content = remove_emojis(message_content)
+            print(message_content, end='', flush=True)  # Print the content (optional)
+            full_message = full_message + message_content
+
+            # Call the TTS function to speak the message content
+            speak_text(chunk)
+        update_short_term_memory("You", full_message)
     memory_on_exit()
 
 
 if __name__ == "__main__":
+    setup_tts()
     main()

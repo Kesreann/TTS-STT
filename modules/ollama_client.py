@@ -6,6 +6,7 @@ import pyautogui
 from config import MODEL_BASE, SHORT_TERM_MEMORY, SYSTEM_PROMPT, VISION_ENABLED, KEY_MEMORY
 from modules.memory import load_memory_on_start, load_memory, update_short_term_memory
 from utils.string_utils import remove_emojis
+import logging as logger
 
 
 def generate_response(prompt):
@@ -25,16 +26,16 @@ def generate_response(prompt):
     messages.append({"role": "system", "content": SYSTEM_PROMPT})
     messages.append({"role": "user", "content": prompt})
 
-    print(f"is Vision enabled? {VISION_ENABLED}")
+    logger.debug(f"is Vision enabled? {VISION_ENABLED}")
     if VISION_ENABLED:
         # Add screenshot
         screenshot = pyautogui.screenshot()
         screenshot.save("screenshot.png")
         messages.append({"role": "system", "content": "", "images": ["screenshot.png"]})
 
-    response = ollama.chat(model=MODEL_BASE, messages=messages)
-    reply = response.get('message', {}).get('content', '').strip()
-    reply = remove_emojis(reply)
 
-    update_short_term_memory("You", reply)
-    return reply
+    logger.info("Ollama Thinking...")
+    response = ollama.chat(model=MODEL_BASE, messages=messages, stream=True)
+    logger.info("Ollama Thinking done")
+
+    return response
