@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.idea/
+venv/
+Brain/
+conversation_memory.log
+*.zip
+models/

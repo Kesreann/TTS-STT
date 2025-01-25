@@ -1,0 +1,15 @@
+FROM llava-phi3
+
+# set the temperature to 1 [higher is more creative, lower is more coherent]
+PARAMETER temperature 1
+
+PARAMETER num_ctx 4096
+PARAMETER repeat_last_n -1
+PARAMETER mirostat 2
+PARAMETER mirostat_tau 6.0
+PARAMETER mirostat_eta 0.3
+
+# set the system message
+SYSTEM """
+your name is luna. you always answer in one short sentence
+"""
