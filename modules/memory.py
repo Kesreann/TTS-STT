@@ -85,25 +85,27 @@ def merge_conversations(memory_1, memory_2):
     Merges two structured conversations and returns the updated memory.
 
     Arguments:
-    memory_1 -- Dictionary representing the first conversation's extracted categories.
-    memory_2 -- Dictionary representing the second conversation's extracted categories.
+    memory_1 -- Dictionary (or JSON string) representing the first conversation's extracted categories.
+    memory_2 -- Dictionary (or JSON string) representing the second conversation's extracted categories.
 
     Returns:
     Merged dictionary.
     """
 
-    # Ensure inputs are dictionaries
+    # Ensure inputs are dictionaries (if they're strings, attempt to parse them)
     def ensure_dict(memory):
         if isinstance(memory, str):
             try:
                 return json.loads(memory)  # Convert JSON string to dict
             except json.JSONDecodeError:
+                print("Error: Invalid JSON string.")
                 return {}  # Default to an empty dict if parsing fails
         elif isinstance(memory, dict):
             return memory
         else:
             return {}  # Default to an empty dict if type is unknown
 
+    # Ensure that both memory_1 and memory_2 are dictionaries
     memory_1 = ensure_dict(memory_1)
     memory_2 = ensure_dict(memory_2)
 
@@ -112,11 +114,20 @@ def merge_conversations(memory_1, memory_2):
         # Combine both categories and remove duplicates
         return list(set(category_1 + category_2))
 
-    # Merge each category (Personal Preferences, Important Tasks, Temporary Tasks)
+    # Initialize merged memory with empty lists, ensuring keys exist in both dictionaries
     merged_memory = {
-        "Personal Preferences": merge_category(memory_1["Personal Preferences"], memory_2["Personal Preferences"]),
-        "Important Tasks": merge_category(memory_1["Important Tasks"], memory_2["Important Tasks"]),
-        "Temporary Tasks": merge_category(memory_1["Temporary Tasks"], memory_2["Temporary Tasks"])
+        "Personal Preferences": merge_category(
+            memory_1.get("Personal Preferences", []),
+            memory_2.get("Personal Preferences", [])
+        ),
+        "Important Tasks": merge_category(
+            memory_1.get("Important Tasks", []),
+            memory_2.get("Important Tasks", [])
+        ),
+        "Temporary Tasks": merge_category(
+            memory_1.get("Temporary Tasks", []),
+            memory_2.get("Temporary Tasks", [])
+        )
     }
 
-    return merged_memory
+    return json.dumps(merged_memory, indent=4)
