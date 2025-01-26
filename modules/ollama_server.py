@@ -12,10 +12,12 @@ def is_ollama_running():
     return False
 
 def start_ollama_server():
-    logger.info(f"Pulling Ollama model {MODEL_BASE}")
-    subprocess.run(["ollama", "pull", MODEL_BASE], shell=True, text=True)
-    logger.info(f"Pulling Ollama model {MODEL_SUMMARY}")
-    subprocess.run(["ollama", "pull", MODEL_BASE], shell=True, text=True)
+    pull_model(MODEL_BASE)
+    pull_model(MODEL_SUMMARY)
     if not is_ollama_running():
         logger.info("Starting Ollama server...")
         subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+
+def pull_model(modelname):
+    logger.info(f"Pulling Ollama model {modelname}")
+    subprocess.run(["ollama", "pull", modelname], shell=True, text=True)
