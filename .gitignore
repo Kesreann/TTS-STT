@@ -11,3 +11,5 @@ models/
 response.wav
 screenshot.png
 temp_recording.wav
+*.wav
+vision/*
