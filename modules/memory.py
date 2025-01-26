@@ -2,8 +2,11 @@ import os
 import ollama
 from config import SHORT_TERM_MEMORY, LONG_TERM_MEMORY, MODEL_SUMMARY, SHORT_TERM_LIMIT, MODEL_SUMMARY_SYSTEM_PROMPT, \
     MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT, KEY_MEMORY
+
 import logging
 import json
+
+logger = logging.getLogger(__name__)
 
 def load_memory(file_path, as_list=True):
     """Loads memory from a file, returning it as a list or a single string."""
@@ -40,7 +43,7 @@ def update_long_term_memory():
     short_term = load_memory(SHORT_TERM_MEMORY, as_list=False).strip()
     long_term = load_memory(LONG_TERM_MEMORY, as_list=False).strip()
     key_memories = load_memory(KEY_MEMORY, as_list=False).strip()
-    print("loaded both files")
+    logger.info("Loaded Memory files")
 
     if short_term:
         full_conversation = f"{long_term}\n\n{short_term}" if long_term else short_term
@@ -53,11 +56,11 @@ def update_long_term_memory():
 
         summary = response.get('message', {}).get('content', '').strip()
         if summary:  # Ensure valid summary before saving
-            logging.info("save response memory in file")
+            logging.info("Save response memory in file")
             save_memory(LONG_TERM_MEMORY, summary, as_list=False)
             save_memory(SHORT_TERM_MEMORY, "", as_list=False)  # Clear short-term memory
 
-        #
+        # TODO
         # logging.info("Sending convo to ollama for key information extraction")
         # response_key_memory = ollama.chat(model=MODEL_SUMMARY, messages=[
         #     {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
@@ -99,7 +102,7 @@ def merge_conversations(memory_1, memory_2):
             try:
                 return json.loads(memory)  # Convert JSON string to dict
             except json.JSONDecodeError:
-                print("Error: Invalid JSON string.")
+                logger.error("Error: Invalid JSON string.")
                 return {}  # Default to an empty dict if parsing fails
         elif isinstance(memory, dict):
             return memory

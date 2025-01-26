@@ -1,6 +1,9 @@
 import re
 
 def remove_emojis(text):
+    if not isinstance(text, str):
+        raise ValueError("Expected a string input")
+
     emoji_pattern = re.compile(
         "["
         "\U0001F600-\U0001F64F"  # Emoticons
