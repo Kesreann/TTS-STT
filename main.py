@@ -26,11 +26,6 @@ logger = logging.getLogger(__name__)
 def main():
     logger.debug("Using CUDA or CPU? " + "cuda" if torch.cuda.is_available() else "cpu")
 
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     executor.submit(run_async_server)
-    # thread = Thread(target=run_async_server)
-    # thread.start()
-
     start_ollama_server()
     setup_tts()
 
