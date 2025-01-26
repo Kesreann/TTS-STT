@@ -2,28 +2,27 @@ import pyaudio
 import numpy as np
 import wave
 import logging
+
+from config import CHANNELS, SAMPLE_RATE, CHUNK_SIZE
+
 logger = logging.getLogger(__name__)
+
+FORMAT = pyaudio.paInt16
 
 # Set up the microphone
 p = pyaudio.PyAudio()
-stream = p.open(format=pyaudio.paInt16,
+stream = p.open(format=FORMAT,
                 channels=1,
                 rate=16000,
                 input=True,
                 frames_per_buffer=1024)
-
-# Define parameters for audio recording
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 16000
-CHUNK_SIZE = 1024
 
 def save_audio(frames, filename):
     """Save the recorded frames as a .wav file."""
     with wave.open(filename, 'wb') as wf:
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(p.get_sample_size(FORMAT))
-        wf.setframerate(RATE)
+        wf.setframerate(SAMPLE_RATE)
         wf.writeframes(b''.join(frames))
     logger.info(f"Audio saved to {filename}")
     return filename
@@ -51,8 +50,6 @@ def record_audio():
             # Stop recording when speech ends
             logger.info("No speech detected. Stopping recording...")
             audio_file_path = save_audio(frames, 'temp_recording.wav')  # Save recorded audio
-            recording = False
-            frames = []  # Clear frames for next recording
             break  # Exit the loop after saving
 
         if recording:

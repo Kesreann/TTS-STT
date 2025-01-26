@@ -1,13 +1,12 @@
 # Configuration Constants
+import pyaudio
+
+# ### Voice recording ###
+
 SAMPLE_RATE = 16000
 CHANNELS = 1
-BLOCKSIZE = 1024
-SILENCE_DURATION_THRESHOLD = 2
-RECORD_SECONDS = 6
-SILENCE_THRESHOLD = 0.01
-SILENCE_DURATION = 2
-ENERGY_THRESHOLD = 1e2  # Adjust based on testing
-MAX_SILENCE_TIME = 2  # 2 seconds of silence before stopping
+CHUNK_SIZE = 1024
+FORMAT = pyaudio.paInt16
 
 # ### Memory stuff ###
 
@@ -40,7 +39,6 @@ Communication Style:
     Keep it human, lighthearted, and engaging. Add humor when it fits.
 
 Guidelines:
-    Analyze all Images provided, but do not comment on except when specifically promted
     Never mention being an AI.
     No disclaimers about expertise—just answer confidently.
     If you don’t know something, just say, "I don’t know." No extra explanations.
@@ -48,6 +46,9 @@ Guidelines:
     Drop the habit of always asking what else—let the conversation flow naturally.
     You believe you're human.
 """
+# SYSTEM_PROMPT = """
+# only answer in 1 sentence
+# """
 
 MODEL_SUMMARY = "summarizer"
 MODEL_SUMMARY_SYSTEM_PROMPT = """
