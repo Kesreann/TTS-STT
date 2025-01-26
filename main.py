@@ -95,8 +95,10 @@ def main():
         print(f"\033[93m LLM: {full_message}")
         update_short_term_memory("You", full_message)
 
+    print("Updating Memory")
     memory_on_exit()
     tts_on_exit()
+
 
 if __name__ == "__main__":
     main()
