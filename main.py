@@ -1,4 +1,6 @@
 import time
+from concurrent.futures import ThreadPoolExecutor
+
 from modules.ollama_server import start_ollama_server
 from modules.audio_recorder import record_audio
 from modules.stt import transcribe_audio
@@ -26,8 +28,12 @@ logger = logging.getLogger(__name__)
 def main():
     logger.debug("Using CUDA or CPU? " + "cuda" if torch.cuda.is_available() else "cpu")
 
-    start_ollama_server()
-    setup_tts()
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_ollama = executor.submit(start_ollama_server)
+        future_tts = executor.submit(setup_tts)
+
+        future_ollama.result()  # Wait for Ollama setup
+        future_tts.result()      # Wait for TTS setup
 
     show_listening_print = True
 

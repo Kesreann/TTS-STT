@@ -1,4 +1,6 @@
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
+
 import psutil
 import ollama
 from config import MODEL_BASE, MODEL_SUMMARY
@@ -12,8 +14,10 @@ def is_ollama_running():
     return False
 
 def start_ollama_server():
-    pull_model(MODEL_BASE)
-    pull_model(MODEL_SUMMARY)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        executor.submit(pull_model, MODEL_BASE)
+        executor.submit(pull_model, MODEL_SUMMARY)
+
     if not is_ollama_running():
         logger.info("Starting Ollama server...")
         subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
