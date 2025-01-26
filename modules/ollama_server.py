@@ -1,7 +1,7 @@
 import subprocess
 import psutil
 import ollama
-from config import MODEL_BASE
+from config import MODEL_BASE, MODEL_SUMMARY
 import logging
 logger = logging.getLogger(__name__)
 
@@ -14,6 +14,8 @@ def is_ollama_running():
 def start_ollama_server():
     logger.info(f"Pulling Ollama model {MODEL_BASE}")
     subprocess.run(["ollama", "pull", MODEL_BASE], shell=True, text=True)
+    logger.info(f"Pulling Ollama model {MODEL_SUMMARY}")
+    subprocess.run(["ollama", "pull", MODEL_BASE], shell=True, text=True)
     if not is_ollama_running():
         logger.info("Starting Ollama server...")
-        subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)

@@ -8,7 +8,7 @@ def setup_tts():
     global engine, stream
     if engine is None and stream is None:  # Only initialize once
         reference_wav = "TTS-Voices/Furina/3.wav"  # Path to a sample voice
-        engine = CoquiEngine(model_name="tts_models/multilingual/multi-dataset/xtts_v2", voice=reference_wav)
+        engine = CoquiEngine(model_name="tts_models/multilingual/multi-dataset/xtts_v2", voice=reference_wav, full_sentences=True)
         stream = TextToAudioStream(engine)
 
 def speak_text(text_stream):
@@ -17,3 +17,6 @@ def speak_text(text_stream):
 
     stream.feed(text_stream['message']['content'])
     stream.play_async()
+
+def tts_on_exit():
+    engine.shutdown()

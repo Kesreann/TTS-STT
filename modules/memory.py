@@ -1,10 +1,12 @@
 import os
+import re
+
 import ollama
 from config import SHORT_TERM_MEMORY, LONG_TERM_MEMORY, MODEL_SUMMARY, SHORT_TERM_LIMIT, MODEL_SUMMARY_SYSTEM_PROMPT, \
     MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT, KEY_MEMORY
 
 import logging
-import json
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ def save_memory(file_path, data, as_list=True):
 def update_short_term_memory(agent, message):
     """Appends new conversation data while maintaining a rolling window."""
     short_term = load_memory(SHORT_TERM_MEMORY)
-    short_term.append(f"{agent}: {message}\n")
+    short_term.append(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {agent}: {message}\n")
 
     # Trim to keep only the last SHORT_TERM_LIMIT exchanges
     if len(short_term) > SHORT_TERM_LIMIT:
@@ -52,26 +54,23 @@ def update_long_term_memory():
             {"role": "system", "content": MODEL_SUMMARY_SYSTEM_PROMPT},
             {"role": "user", "content": full_conversation}
         ])
-        logging.info("got the response from ollama")
+        logging.info(f"got the response from ollama: {response['message']['content']}")
 
-        summary = response.get('message', {}).get('content', '').strip()
+        summary = response['message']['content'].strip()
         if summary:  # Ensure valid summary before saving
             logging.info("Save response memory in file")
             save_memory(LONG_TERM_MEMORY, summary, as_list=False)
             save_memory(SHORT_TERM_MEMORY, "", as_list=False)  # Clear short-term memory
 
-        # TODO
-        # logging.info("Sending convo to ollama for key information extraction")
-        # response_key_memory = ollama.chat(model=MODEL_SUMMARY, messages=[
-        #     {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
-        #     {"role": "user", "content": full_conversation}
-        # ])
-        #
-        # if response_key_memory:
-        #     save_memory(KEY_MEMORY, merge_conversations(response_key_memory['message']['content'], key_memories), as_list=False)
-        #
-        # print(response_key_memory['message']['content'])
-        # logging.debug("key memory response: " + response_key_memory['message']['content'])
+        logging.info("Sending convo to ollama for key information extraction")
+        response_key_memory = ollama.chat(model=MODEL_SUMMARY, messages=[
+            {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
+            {"role": "user", "content": full_conversation}
+        ])
+
+        logging.debug("key memory response: " + response_key_memory['message']['content'])
+        if response_key_memory:
+            save_memory(KEY_MEMORY, merge_conversations(response_key_memory['message']['content'], key_memories), as_list=False)
 
 
 def load_memory_on_start():
@@ -81,57 +80,57 @@ def load_memory_on_start():
 
 def memory_on_exit():
     """Handles memory saving on program exit."""
+    logger.info("Memory on exit triggered")
     update_long_term_memory()
+    logger.info("Memory update complete")
 
 
 def merge_conversations(memory_1, memory_2):
     """
-    Merges two structured conversations and returns the updated memory.
+    Merges two structured conversation logs while ensuring:
+    - Proper formatting is maintained
+    - Duplicates are removed
+    - Entries stay in order
 
     Arguments:
-    memory_1 -- Dictionary (or JSON string) representing the first conversation's extracted categories.
-    memory_2 -- Dictionary (or JSON string) representing the second conversation's extracted categories.
+    memory_1 -- String representing the first structured memory log.
+    memory_2 -- String representing the second structured memory log.
 
     Returns:
-    Merged dictionary.
+    Merged structured memory as a string.
     """
 
-    # Ensure inputs are dictionaries (if they're strings, attempt to parse them)
-    def ensure_dict(memory):
-        if isinstance(memory, str):
-            try:
-                return json.loads(memory)  # Convert JSON string to dict
-            except json.JSONDecodeError:
-                logger.error("Error: Invalid JSON string.")
-                return {}  # Default to an empty dict if parsing fails
-        elif isinstance(memory, dict):
-            return memory
-        else:
-            return {}  # Default to an empty dict if type is unknown
+    # Ensure both inputs are strings, default to empty string if None
+    memory_1 = memory_1.strip() if isinstance(memory_1, str) else ""
+    memory_2 = memory_2.strip() if isinstance(memory_2, str) else ""
+    # Define categories
+    categories = ["Personal Preferences", "Important Tasks", "Temporary Tasks"]
 
-    # Ensure that both memory_1 and memory_2 are dictionaries
-    memory_1 = ensure_dict(memory_1)
-    memory_2 = ensure_dict(memory_2)
+    # Function to extract category content
+    def extract_category(text, category):
+        """Extracts the list under a given category."""
+        pattern = rf"\d+\.\s\*\*{re.escape(category)}\*\*:\n(.*?)(?=\n\d+\.\s\*\*|\Z)"  # Stops at next category or end of text
+        match = re.search(pattern, text, re.DOTALL)
+        return match.group(1).strip().split("\n") if match else []
 
-    # Merging function for categories
-    def merge_category(category_1, category_2):
-        # Combine both categories and remove duplicates
-        return list(set(category_1 + category_2))
+    # Function to merge two lists while removing duplicates and keeping order
+    def merge_lists(list1, list2):
+        seen = set()
+        merged = []
+        for item in list1 + list2:
+            item = item.strip()
+            if item and item not in seen:
+                seen.add(item)
+                merged.append(item)
+        return merged
 
-    # Initialize merged memory with empty lists, ensuring keys exist in both dictionaries
-    merged_memory = {
-        "Personal Preferences": merge_category(
-            memory_1.get("Personal Preferences", []),
-            memory_2.get("Personal Preferences", [])
-        ),
-        "Important Tasks": merge_category(
-            memory_1.get("Important Tasks", []),
-            memory_2.get("Important Tasks", [])
-        ),
-        "Temporary Tasks": merge_category(
-            memory_1.get("Temporary Tasks", []),
-            memory_2.get("Temporary Tasks", [])
-        )
-    }
+    # Process each category
+    merged_memory = []
+    for category in categories:
+        items_1 = extract_category(memory_1, category)
+        items_2 = extract_category(memory_2, category)
+        merged_items = merge_lists(items_1, items_2)
 
-    return json.dumps(merged_memory, indent=4)
+        merged_memory.append(f"1. **{category}**:\n" + "\n".join(merged_items))
+
+    return "\n\n".join(merged_memory)  # Reconstruct final formatted memory
