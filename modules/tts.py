@@ -19,6 +19,10 @@ def speak_text(text_stream):
     stream.play_async()
 
 def tts_on_exit():
-    if stream.is_playing():
-        stream.stop()
+    stop_talking()
     engine.shutdown()
+
+def stop_talking():
+    if stream.is_playing():
+        print("Stopping TTS Talk")
+        stream.stop()
