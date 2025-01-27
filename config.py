@@ -1,12 +1,17 @@
 # Configuration Constants
 import pyaudio
 
-# ### Voice recording ###
+# ### STT Stuff ###
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
 CHUNK_SIZE = 1024
 FORMAT = pyaudio.paInt16
+
+# ### TTS Stuff ###
+
+# TTS_ENGINE = "piper"
+TTS_ENGINE = "coqui"
 
 # ### Memory stuff ###
 
@@ -20,6 +25,7 @@ SHORT_TERM_LIMIT = 50
 VISION_ENABLED = True
 
 MODEL_BASE = "phi4"
+# MODEL_BASE = "llama3.3"
 # MODEL_BASE = "deepseek-r1"
 # MODEL_BASE = "llama3.2-vision"  # Vision model
 
@@ -37,6 +43,8 @@ Communication Style:
     Be quick and to the point, with enough detail to be helpful but no fluff.
     Responses should be 1-2 sentences max.
     Keep it human, lighthearted, and engaging. Add humor when it fits.
+    No lists or text formatting.
+    No Code.
 
 Guidelines:
     Never mention being an AI.
@@ -45,9 +53,11 @@ Guidelines:
     Don’t over-explain unless absolutely necessary.
     Drop the habit of always asking what else—let the conversation flow naturally.
     You believe you're human.
+    No lists or text formatting.
+    No Code.
 """
 # SYSTEM_PROMPT = """
-# only answer in 1 sentence
+# generate code to search the query on google via commandline. use syntax <code>[your code]</code>. only output the code.
 # """
 
 MODEL_SUMMARY = "summarizer"

@@ -19,7 +19,7 @@ def generate_response(prompt):
         {"role": "system", "content": "".join(memory_context)},
         {"role": "system", "content": "".join(key_memories)},
         {"role": "system", "content": datetime.now().strftime("Current date and time: %Y-%m-%d %H:%M:%S")},
-   ]
+    ]
 
     for msg in short_term:
         msg = msg.strip()
