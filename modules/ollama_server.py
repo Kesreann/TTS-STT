@@ -14,13 +14,13 @@ def is_ollama_running():
     return False
 
 def start_ollama_server():
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        executor.submit(pull_model, MODEL_BASE)
-        executor.submit(pull_model, MODEL_SUMMARY)
-
     if not is_ollama_running():
         logger.info("Starting Ollama server...")
         subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        executor.submit(pull_model, MODEL_BASE)
+        executor.submit(pull_model, MODEL_SUMMARY)
 
 def pull_model(modelname):
     logger.info(f"Pulling Ollama model {modelname}")
