@@ -7,6 +7,7 @@ from config import SHORT_TERM_MEMORY, LONG_TERM_MEMORY, MODEL_SUMMARY, SHORT_TER
 
 import logging
 from datetime import datetime
+import concurrent.futures
 
 logger = logging.getLogger(__name__)
 
@@ -39,38 +40,60 @@ def update_short_term_memory(agent, message):
     save_memory(SHORT_TERM_MEMORY, short_term)
 
 
+def summarize_memory(full_conversation):
+    """Summarizes the full conversation using the Ollama model."""
+    logging.info("Sending convo to ollama to summarize")
+    response = ollama.chat(model=MODEL_SUMMARY, messages=[
+        {"role": "system", "content": MODEL_SUMMARY_SYSTEM_PROMPT},
+        {"role": "user", "content": full_conversation}
+    ])
+    logging.info(f"Got the response from ollama: {response['message']['content']}")
+    return response['message']['content'].strip()
+
+
+def extract_key_information(full_conversation):
+    """Extracts key information from the full conversation."""
+    logging.info("Sending convo to ollama for key information extraction")
+    response = ollama.chat(model=MODEL_SUMMARY, messages=[
+        {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
+        {"role": "user", "content": full_conversation}
+    ])
+    logging.debug("Key memory response: " + response['message']['content'])
+    return response['message']['content'].strip()
+
+
+def update_memory_files(summary, key_info, key_memories):
+    """Updates the memory files with the new summary and key information."""
+    if summary:
+        logging.info("Saving summarized memory in file")
+        save_memory(LONG_TERM_MEMORY, summary, as_list=False)
+        save_memory(SHORT_TERM_MEMORY, "", as_list=False)  # Clear short-term memory
+
+    if key_info:
+        logging.info("Saving key memory in file")
+        save_memory(KEY_MEMORY, merge_conversations(key_info, key_memories), as_list=False)
+
+
 def update_long_term_memory():
     """Summarizes short-term memory and appends it to long-term memory reliably."""
-    logging.info("Updating Longterm Memory")
+    logging.info("Updating Long-term Memory")
     short_term = load_memory(SHORT_TERM_MEMORY, as_list=False).strip()
     long_term = load_memory(LONG_TERM_MEMORY, as_list=False).strip()
     key_memories = load_memory(KEY_MEMORY, as_list=False).strip()
-    logger.info("Loaded Memory files")
+    logger.info("Loaded memory files")
 
-    if short_term:
-        full_conversation = f"{long_term}\n\n{short_term}" if long_term else short_term
-        logging.info("Sending convo to ollama to summarize")
-        response = ollama.chat(model=MODEL_SUMMARY, messages=[
-            {"role": "system", "content": MODEL_SUMMARY_SYSTEM_PROMPT},
-            {"role": "user", "content": full_conversation}
-        ])
-        logging.info(f"got the response from ollama: {response['message']['content']}")
+    if not short_term:
+        logging.info("No short-term memory to process.")
+        return
 
-        summary = response['message']['content'].strip()
-        if summary:  # Ensure valid summary before saving
-            logging.info("Save response memory in file")
-            save_memory(LONG_TERM_MEMORY, summary, as_list=False)
-            save_memory(SHORT_TERM_MEMORY, "", as_list=False)  # Clear short-term memory
+    full_conversation = f"{long_term}\n\n{short_term}" if long_term else short_term
 
-        logging.info("Sending convo to ollama for key information extraction")
-        response_key_memory = ollama.chat(model=MODEL_SUMMARY, messages=[
-            {"role": "system", "content": MODEL_SUMMARY_KEY_INFO_SYSTEM_PROMPT},
-            {"role": "user", "content": full_conversation}
-        ])
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_summary = executor.submit(summarize_memory, full_conversation)
+        future_key_info = executor.submit(extract_key_information, full_conversation)
 
-        logging.debug("key memory response: " + response_key_memory['message']['content'])
-        if response_key_memory:
-            save_memory(KEY_MEMORY, merge_conversations(response_key_memory['message']['content'], key_memories), as_list=False)
+        summary = future_summary.result()
+        key_info = future_key_info.result()
 
 
 def load_memory_on_start():
